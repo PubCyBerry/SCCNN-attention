@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   app:
-    image: kth7186/pytorch:1.10.0-cuda11.3-cudnn8-runtime-zsh-setup
+    image: kth7186/pytorch:1.10.0-cuda11.3-cudnn8-zsh-setup
     container_name: DockerTorch_2
     ipc: host
     ports:
