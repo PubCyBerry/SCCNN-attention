@@ -1,0 +1,42 @@
+log:
+  project_name: SCCNN_attention
+  val_log_freq_epoch: 1
+  epoch: 100
+  n_fold: 5
+  dry_run: false
+  device:
+    gpu:
+      - 0
+  log_path: Logs
+  checkpoint_path: Checkpoints
+  precision: 32
+
+loader:
+  train:
+    batch_size: 32
+    num_workers: 8
+    pin_memory: False
+    shuffle: False
+  eval:
+    batch_size: 32
+    num_workers: 8
+    pin_memory: False
+    shuffle: False
+
+data:
+  path: Data/preprocessed/all
+
+network:
+  model: ${log.project_name}
+  num_classes: 2
+  encoder: ${SCCNN}
+  attention: ${Attention}
+  decoder: ${Decoder}
+
+optimizer:
+  optimizer: Adam
+  lr: 1e-4
+
+
+
+

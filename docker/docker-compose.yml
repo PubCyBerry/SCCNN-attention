@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  app:
+    image: pytorch/pytorch:1.10.0-cuda11.3-cudnn8-runtime
+    container_name: DockerTorch_2
+    ipc: host
+    ports:
+      - 5686:8888
+    volumes:
+      - ../:/app/
+      - ~/Data/SCCNN:/app/Data/
+    working_dir: /app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [ gpu ]
+    stdin_open: true # docker run -i
+    tty: true # docker run -t
+    entrypoint: [ "/bin/bash", "-c" ]
+    command:
+      - |
+        apt-get update
+        apt-get updgrade -y
+        apt-get install git vim -y
+        python -m pip install -r requirements.txt
+        pip install ipykernel
+        /bin/bash
