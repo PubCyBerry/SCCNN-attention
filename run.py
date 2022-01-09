@@ -1,7 +1,7 @@
 import os
 from omegaconf import OmegaConf
 
-from src.runners import KFold_Runner, LOSO_Runner
+from src.runners import LOSO_Runner
 
 
 def main(cfg=OmegaConf.load("config/config.yaml")) -> None:

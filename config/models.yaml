@@ -30,11 +30,11 @@ SCCNN:
 
 Attention: 
   input_dim: ${SCCNN.conv_block4.out_f}
-  attention_dim: 256
+  attention_dim: 64
   output_dim: 1
 
 Decoder: 
-  hidden_dim: 512
+  hidden_dim: 128
   output_dim: ${network.num_classes}
   dropout_p: 0
 

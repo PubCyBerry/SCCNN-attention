@@ -8,7 +8,6 @@ from torch.utils.data import Dataset
 
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning import LightningModule, LightningDataModule, Trainer
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 
 @dataclass
@@ -28,14 +27,10 @@ class Base_Runner:
         return datamodule
 
     def get_callbacks(self):
-        early_stop_callback = EarlyStopping(
-            monitor="val_accuracy",
-            patience=1,
-            verbose=True,
-            mode="max",
-        )
-
-        callbacks = dict(filter(lambda key, value: key.endswith('callback'), vars())).values()
+        '''
+        add callbacks here
+        '''
+        callbacks = dict(filter(lambda item: item[0].endswith('callback'), vars().items())).values()
         callbacks = list(callbacks)
         return callbacks if len(callbacks) > 0 else None
 

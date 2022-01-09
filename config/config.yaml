@@ -6,7 +6,7 @@ log:
   dry_run: false
   device:
     gpu:
-      - 0
+      - 1
   log_path: Logs
   checkpoint_path: Checkpoints
   precision: 32
@@ -15,10 +15,10 @@ loader:
   train:
     batch_size: 32
     num_workers: 8
-    pin_memory: False
+    pin_memory: True
     shuffle: False
   eval:
-    batch_size: 32
+    batch_size: 1000
     num_workers: 8
     pin_memory: False
     shuffle: False

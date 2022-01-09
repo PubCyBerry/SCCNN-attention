@@ -1,4 +1,4 @@
-from typing import Iterator, Optional, Sequence, List, TypeVar, Generic, Sized, Union
+from typing import Optional, List
 
 import torch
 from torch.utils.data import Dataset
