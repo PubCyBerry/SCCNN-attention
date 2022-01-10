@@ -101,7 +101,7 @@ class LOSO_Runner(Base_Runner):
                 fast_dev_run=self.log.dry_run,
                 callbacks=[
                     *self.get_callbacks(site=site_str),
-                    wbc.WatchModel(log="gradients"),
+                    wbc.WatchModel(),
                     wbc.LogConfusionMatrix(),
                     wbc.LogF1PrecRecHeatmap(),
                     # tbc.WatchModel(),
@@ -117,21 +117,30 @@ class LOSO_Runner(Base_Runner):
             final_results.append(
                 trainer.callback_metrics[f"{model.prefix}Accuracy/test"]
             )
-        plot_paper(
-            results=final_results,
-            path=os.path.join(
-                self.log.log_path,
-                self.log.project_name,
-                f"version{self.version:03d}",
-                "Accuracy.png",
-            ),
-        )
 
         try:
+            import wandb
+
             wb_logger = wbc.get_wandb_logger(trainer)
-            wb_logger.log({'overall_accuracy': torch.mean(final_results)})
-        except:
-            pass
+            wb_logger.experiment.log(
+                {"overall_accuracy": torch.Tensor(final_results).mean().item()}
+            )
+            wb_logger.experiment.log(
+                {
+                    "overall_accuracy_image": wandb.Image(
+                        plot_paper(
+                            results=final_results,
+                            path=os.path.join(
+                                self.log.log_path,
+                                self.log.project_name,
+                                f"version{self.version:03d}",
+                                "Accuracy.png",
+                            ),
+                        )
+                    )
+                }
+            )
+        except Exception as e:
+            print(e)
 
         return
-

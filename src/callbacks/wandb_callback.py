@@ -8,7 +8,8 @@ from pytorch_lightning.loggers import LoggerCollection, WandbLogger
 from pytorch_lightning.utilities import rank_zero_only
 from sklearn import metrics
 from sklearn.metrics import f1_score, precision_score, recall_score
-from torchmetrics import F1, Precision, Recall, ConfusionMatrix
+
+from src.utils import plot_confusion_matrix_from_data
 
 
 def get_wandb_logger(trainer: Trainer) -> WandbLogger:
@@ -36,10 +37,10 @@ class WatchModel(Callback):
     """Make wandb watch model at the beginning of the run."""
 
     def __init__(self, log: str = "all", log_freq: int = 1):
-        '''
+        """
         log: gradients, parameters, all, None
         log_freq: log every N batches
-        '''
+        """
 
         self.log = log
         self.log_freq = log_freq
@@ -47,9 +48,11 @@ class WatchModel(Callback):
     @rank_zero_only
     def on_train_start(self, trainer, pl_module):
         logger = get_wandb_logger(trainer=trainer)
-        logger.watch(model=trainer.model, log=self.log, log_freq=self.log_freq, log_graph=False)
+        logger.watch(
+            model=trainer.model, log=self.log, log_freq=self.log_freq, log_graph=False
+        )
 
-        
+
 class LogConfusionMatrix(Callback):
     """Generate confusion matrix every epoch and send it to wandb.
     Expects validation step to return predictions and targets.
@@ -96,7 +99,21 @@ class LogConfusionMatrix(Callback):
             sn.heatmap(confusion_matrix, annot=True, annot_kws={"size": 8}, fmt="g")
 
             # names should be unique or else charts from different experiments in wandb will overlap
-            experiment.log({f"{trainer.test_site_prefix}confusion_matrix/{trainer.current_epoch}": wandb.Image(plt)}, commit=False)
+            # experiment.log( { f"{trainer.test_site_prefix}confusion_matrix/{trainer.current_epoch}": wandb.Image( plt) }, commit=False,)
+            # experiment.log({f"{trainer.test_site_prefix}confusion_matrix/{experiment.name}": wandb.Image(plt)}, commit=False)
+            experiment.log(
+                {
+                    f"{trainer.test_site_prefix}confusion_matrix/{trainer.current_epoch}": wandb.Image(
+                        plot_confusion_matrix_from_data(
+                            y_test=targets,
+                            predictions=preds,
+                            columns=["TDC", "ADHD"],
+                            cmap=sn.cubehelix_palette(as_cmap=True),
+                            fz=14,
+                        ),
+                    ),
+                }
+            )
 
             # according to wandb docs this should also work but it crashes
             # experiment.log(f{"confusion_matrix/{experiment.name}": plt})
@@ -107,7 +124,7 @@ class LogConfusionMatrix(Callback):
             self.preds.clear()
             self.targets.clear()
 
-            
+
 class LogF1PrecRecHeatmap(Callback):
     """Generate f1, precision, recall heatmap every epoch and send it to wandb.
     Expects validation step to return predictions and targets.
@@ -162,7 +179,15 @@ class LogF1PrecRecHeatmap(Callback):
             )
 
             # names should be unique or else charts from different experiments in wandb will overlap
-            experiment.log({f"{trainer.test_site_prefix}f1_p_r_heatmap/{trainer.current_epoch}": wandb.Image(plt)}, commit=False)
+            experiment.log(
+                {
+                    f"{trainer.test_site_prefix}f1_p_r_heatmap/{trainer.current_epoch}": wandb.Image(
+                        plt
+                    )
+                },
+                commit=False,
+            )
+            # experiment.log({f"{trainer.test_site_prefix}f1_p_r_heatmap/{experiment.name}": wandb.Image(plt)}, commit=False)
 
             # reset plot
             plt.clf()

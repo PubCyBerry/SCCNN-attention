@@ -2,7 +2,7 @@ from typing import Any, Optional, List, Dict
 from dataclasses import dataclass, field
 from torch.utils.data import ConcatDataset, DataLoader
 from pytorch_lightning import LightningDataModule
-from src.data import collate_fn, BalancedSampler
+from src.data import collate_fn, SamplerManager
 
 
 @dataclass
@@ -13,7 +13,9 @@ class LOSODataModule(LightningDataModule):
 
     def setup(self, stage: Optional[str] = None):
         if stage in ("fit", None):
-            self.train_dataset = ConcatDataset([self.dataset(site) for site in self.data.train_site])
+            self.train_dataset = ConcatDataset(
+                [self.dataset(site) for site in self.data.train_site]
+            )
             self.val_dataset = self.dataset(self.data.test_site)
 
         if stage in ("test", None):
@@ -24,12 +26,14 @@ class LOSODataModule(LightningDataModule):
             self.train_dataset,
             **self.loader.train,
             collate_fn=collate_fn,
-            sampler=BalancedSampler(
+            sampler=SamplerManager(
                 self.train_dataset,
                 self.loader.train.batch_size,
-                shuffle=True,
-                replacement="over",
-            )
+                weights=[0.9, 0.1],
+                method="oversampling",
+                fix_number=True,
+                sweep=True,
+            ),
         )
 
     def val_dataloader(self):
