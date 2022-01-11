@@ -32,7 +32,7 @@ class LOSODataModule(LightningDataModule):
                 weights=[0.9, 0.1],
                 method="oversampling",
                 fix_number=True,
-                sweep=True,
+                sweep=False,
             ),
         )
 

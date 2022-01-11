@@ -96,7 +96,6 @@ def stack_batch(class_labels, batch_size, weights, method, sweep):
                 # column becomes batch
                 c = c.view(p, -1)
                 # drop exceeding
-                print(c.size(), m, r, p)
                 c = c[:, :m]
                 sequence.append(c)
 
@@ -110,15 +109,17 @@ def stack_batch(class_labels, batch_size, weights, method, sweep):
                     rem = int(((l - quo)* p * min_batch[i]).round())
                     len_c = len(c)
                     for j in range(quo):
-                        c = torch.concat((c, c[torch.randperm(len_c)][:-r]))
-                        remainders.append(c[-r:])
+                        if r > 0:
+                            c = torch.concat((c, c[torch.randperm(len_c)][:-r]))
+                            remainders.append(c[-r:])
+                        else:
+                            c = torch.concat((c, c[torch.randperm(len_c)]))
                     c = torch.concat((c, c[torch.randperm(len_c)][:rem]))
 
                 if r > 0:
                     c = c[:-r]
                     remainders.append(c[-r:])
                 c = c.view(p, -1)
-                print(c.size(), r, p, l)
                 c = c[:, :M]
                 sequence.append(c)
     
