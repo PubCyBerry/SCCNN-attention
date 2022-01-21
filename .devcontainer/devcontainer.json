@@ -14,7 +14,7 @@
 
 	// The optional 'workspaceFolder' property is the path VS Code should open by default when
 	// connected. This is typically a file mount in .devcontainer/docker-compose.yml
-	"workspaceFolder": "/app",
+	"workspaceFolder": "/workspace",
 
 	// Set *default* container specific settings.json values on container create.
 	"settings": {},
@@ -34,7 +34,6 @@
 		"ms-python.vscode-pylance",
 		"esbenp.prettier-vscode",
 		"hoovercj.vscode-power-mode",
-		"pnp.polacode",
 		"davidanson.vscode-markdownlint",
 		"shd101wyy.markdown-preview-enhanced",
 		"yzhang.markdown-all-in-one",

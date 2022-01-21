@@ -2,15 +2,15 @@ version: '3.8'
 
 services:
   app:
-    image: kth7186/pytorch:1.10.0-cuda11.3-cudnn8-zsh-setup
+    image: kth7186/pytorch:1.10.0-zsh-setup
     container_name: DockerTorch_2
     ipc: host
     ports:
       - 5686:8888
     volumes:
-      - ../:/app/
-      - ~/Data/SCCNN:/app/Data/
-    working_dir: /app
+      - ../:/workspace/
+      - ~/Data/SCCNN:/workspace/Data/
+    working_dir: /workspace/
     deploy:
       resources:
         reservations:

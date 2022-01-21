@@ -1,17 +1,16 @@
-import os
 import numpy as np
-from glob import glob
-import pickle
+from typing import Union, List
 
 import torch
 from torch.utils.data import Dataset
 
+from src.data import Load, SITES_DICT
+
 
 class ROIDataset(Dataset):
-    def __init__(self, filename: str) -> None:
-        with open(filename, "rb") as f:
-            self.data = pickle.load(f)
-            self.labels = pickle.load(f)
+    def __init__(self, site: Union[List, str]) -> None:
+        load = Load()
+        self.data, self.labels = load.loadSiteData(site)
 
     def __len__(self):
         return len(self.labels)
@@ -56,37 +55,36 @@ def collate_fn(batch):
 
 if __name__ == "__main__":
     from time import sleep
+    from copy import deepcopy
 
-    from torch.utils.data import ConcatDataset, DataLoader
+    from torch.utils.data import DataLoader
+    from sampling import SamplerFactory
 
-    from src.data import BalancedSampler
+    for i, (key, value) in enumerate(SITES_DICT.items()):
+        train_site = deepcopy(list(SITES_DICT.keys()))
+        test_site = train_site.pop(i)
 
-    path = os.path.join("Data", "preprocessed", "all")
-    filenames = glob(os.path.join(path, "*.pickle"))
+        train_dataset = ROIDataset(train_site)
+        test_dataset = ROIDataset(test_site)
+        print(train_site, test_site)
+        print(len(train_dataset), len(test_dataset))
 
-    datasets = list()
-    total_length = 0
-    for filename in filenames:
-        print("filename:", filename)
-        dataset = ROIDataset(filename)
-        total_length += len(dataset)
-        datasets.append(dataset)
-
-    dataset = ConcatDataset(datasets)
-
-    for mode in ["under", None, "over"]:
-        total_concat_length = 0
         batch_size = 32
+        num_workers = 8
         for x, y in DataLoader(
-            dataset,
-            collate_fn=collate_fn,
-            batch_size=batch_size,
-            pin_memory=True,
-            shuffle=False,
-            num_workers=8,
-            sampler=BalancedSampler(
-                dataset, batch_size, shuffle=True, replacement=mode
+            train_dataset,
+            batch_sampler=SamplerFactory().get(
+                class_idxs=[
+                    np.where(train_dataset.labels == i)[0].tolist() for i in range(2)
+                ],
+                batch_size=batch_size,
+                n_batches=50,
+                alpha=0.0,
+                kind="fixed",
             ),
+            num_workers=num_workers,
+            collate_fn=collate_fn,
+            pin_memory=True,
         ):
             print(
                 "{}, {}, {}, {}".format(
@@ -96,6 +94,4 @@ if __name__ == "__main__":
             for i, bins in enumerate(np.bincount(y)):
                 print(f"{i}: {bins:2d} ", end="")
             print()
-            total_concat_length += len(y)
-
-        print("{}: {} -> {}".format(mode, total_length, total_concat_length))
+            # sleep(1)

@@ -1,164 +1,222 @@
 from typing import Optional, List
 import numpy as np
-
-import torch
-from torch.utils.data import Dataset
-from torch.utils.data.sampler import Sampler
+from torch.utils.data.sampler import BatchSampler, WeightedRandomSampler
+from src.utils import setup_logger
 
 
-class SamplerManager:
-    def __init__(
-        self,
-        dataset: Dataset,
-        batch_size: int,
-        shuffle: bool = True,
-        weights: List = [0.5, 0.5],
-        method: str = "oversampling",
-        fix_number: bool = True,
-        sweep: bool = False,
-    ):
-        labels = torch.Tensor(list(map(lambda x: x[1], dataset)))
-        weights = torch.Tensor(weights)
+class SamplerFactory:
+    """
+    Factory class to create balanced samplers.
+    """
 
-        assert sum(weights) == 1, "sum of weights should be 1"
-        # if fix_number, all batch proportions are same. Otherwise, randomly sampled.
-        if fix_number:
-            self.sequence = Weighted_Random_Fixed_Sequencer(
-                labels, batch_size, shuffle, weights, method, sweep
-            )
-        else:
-            self.sequence = Weighted_Random_Sampled_Sequencer(
-                labels, batch_size, shuffle, weights, method, sweep
-            )
+    def __init__(self, verbose=0):
+        self.logger = setup_logger(self.__class__.__name__, verbose)
 
-    def __iter__(self):
-        return iter(self.sequence)
+    def get(self, class_idxs, batch_size, n_batches, alpha, kind):
+        """
+        Parameters
+        ----------
+        class_idxs : 2D list of ints
+            List of sample indices for each class. Eg. [[0, 1], [2, 3]] implies indices 0, 1
+            belong to class 0, and indices 2, 3 belong to class 1.
+        batch_size : int
+            The batch size to use.
+        n_batches : int
+            The number of batches per epoch.
+        alpha : numeric in range [0, 1]
+            Weighting term used to determine weights of each class in each batch.
+            When `alpha` == 0, the batch class distribution will approximate the training population
+            class distribution.
+            When `alpha` == 1, the batch class distribution will approximate a uniform distribution,
+            with equal number of samples from each class.
+        kind : str ['fixed' | 'random']
+            The kind of sampler. `Fixed` will ensure each batch contains a constant proportion of
+            samples from each class. `Random` will simply sample with replacement according to the
+            calculated weights.
+        """
+        if kind == 'random':
+            return self.random(class_idxs, batch_size, n_batches, alpha)
+        if kind == 'fixed':
+            return self.fixed(class_idxs, batch_size, n_batches, alpha)
+        raise Exception(f'Received kind {kind}, must be `random` or `fixed`')
 
-    def __len__(self):
-        return len(self.sequence)
+    def random(self, class_idxs, batch_size, n_batches, alpha):
+        self.logger.info(f'Creating `{WeightedRandomBatchSampler.__class__.__name__}`...')
+        class_sizes, weights = self._weight_classes(class_idxs, alpha)
+        sample_rates = self._sample_rates(weights, class_sizes)
+        return WeightedRandomBatchSampler(sample_rates, class_idxs, batch_size, n_batches)
 
+    def fixed(self, class_idxs, batch_size, n_batches, alpha):
+        self.logger.info(f'Creating `{WeightedFixedBatchSampler.__class__.__name__}`...')
+        class_sizes, weights = self._weight_classes(class_idxs, alpha)
+        class_samples_per_batch = self._fix_batches(weights, class_sizes, batch_size, n_batches)
+        return WeightedFixedBatchSampler(class_samples_per_batch, class_idxs, n_batches)
 
-def get_class_labels(labels, shuffle=True):
-    num_classes = int(max(labels)) + 1
-    class_labels = list()
-    for i in range(num_classes):
-        label = torch.where(labels == i)[0]
-        if shuffle:
-            label = label[torch.randperm(label.size(0))]
-        class_labels.append(label)
-    return class_labels
+    def _weight_classes(self, class_idxs, alpha):
+        class_sizes = np.asarray([len(idxs) for idxs in class_idxs])
+        n_samples = class_sizes.sum()
+        n_classes = len(class_idxs)
 
-def get_batch_portion(batch_size, weights):
-    portion = torch.round(weights * batch_size)
-    remainder = batch_size - portion.sum()
-    portion[portion.argmin(axis=0)] += remainder
-    assert (
-        batch_size == portion.sum()
-    ), "not enough batch size. batch size: %d portion: %d" % (batch_size, portion.sum())
-    return portion
+        original_weights = np.asarray([size / n_samples for size in class_sizes])
+        uniform_weights = np.repeat(1 / n_classes, n_classes)
 
-def interpolate(weights, n_div=25):
-    left, right = weights, 1 - weights
-    result = list()
-    for w in np.linspace(0, 1, n_div):
-        result.extend(left * (1 - w) + right * (w))
-    return torch.Tensor(result).view(-1,2)
+        self.logger.info(f'Sample population absolute class sizes: {class_sizes}')
+        self.logger.info(f'Sample population relative class sizes: {original_weights}')
 
-def stack_batch(class_labels, batch_size, weights, method, sweep):
-    sequence = list()
-    if sweep:
-        weights_list = interpolate(weights)
-        i = 0
-        for weights in weights_list:
-            portion = get_batch_portion(batch_size, weights)
-            for j, (c, p) in enumerate(zip(class_labels, portion)):
-                if (i * p) > len(c):
-                    class_labels[j] = torch.concat([c, c[torch.randperm(len(c))]])
-                p = int(p)
-                sequence.extend(c[i * p : (i + 1) * p])
-            i += 1
+        weights = self._balance_weights(uniform_weights, original_weights, alpha)
+        return class_sizes, weights
 
-    else:
-        portion = get_batch_portion(batch_size, weights)
-        class_len = torch.Tensor(list(map(len, class_labels)))
-        min_batch = (class_len / portion).floor()
-        remainder = (class_len % portion)
-        remainders = list()
+    def _balance_weights(self, weight_a, weight_b, alpha):
+        assert alpha >= 0 and alpha <= 1, f'invalid alpha {alpha}, must be 0 <= alpha <= 1'
+        beta = 1 - alpha
+        weights = (alpha * weight_a) + (beta * weight_b)
+        self.logger.info(f'Target batch class distribution {weights} using alpha={alpha}')
+        return weights
 
-        if method == 'undersampling':
-            m = int(min(min_batch))
-            for i, (c, r, p) in enumerate(zip(class_labels, remainder, portion)):
-                r, p = int(r), int(p)
-                # drop remainder
-                if r > 0:
-                    c = c[:-r]
-                    remainders.append(c[-r:])
-                # column becomes batch
-                c = c.view(p, -1)
-                # drop exceeding
-                c = c[:, :m]
-                sequence.append(c)
+    def _sample_rates(self, weights, class_sizes):
+        return weights / class_sizes
 
-        elif method == 'oversampling':
-            lack_batch = (max(min_batch) - min_batch) / min_batch
-            M = int(max(min_batch))
-            for i, (c, r, p, l) in enumerate(zip(class_labels, remainder, portion, lack_batch)):
-                r, p = int(r), int(p)
-                if l > 0:
-                    quo = int(l)
-                    rem = int(((l - quo)* p * min_batch[i]).round())
-                    len_c = len(c)
-                    for j in range(quo):
-                        if r > 0:
-                            c = torch.concat((c, c[torch.randperm(len_c)][:-r]))
-                            remainders.append(c[-r:])
-                        else:
-                            c = torch.concat((c, c[torch.randperm(len_c)]))
-                    c = torch.concat((c, c[torch.randperm(len_c)][:rem]))
+    def _fix_batches(self, weights, class_sizes, batch_size, n_batches):
+        """
+        Calculates the number of samples of each class to include in each batch, and the number
+        of batches required to use all the data in an epoch.
+        """
+        class_samples_per_batch = np.round((weights * batch_size)).astype(int)
 
-                if r > 0:
-                    c = c[:-r]
-                    remainders.append(c[-r:])
-                c = c.view(p, -1)
-                c = c[:, :M]
-                sequence.append(c)
-    
-        else:
-            m = int(min(min_batch))
-            for i, (c, r, p) in enumerate(zip(class_labels, remainder, portion)):
-                r, p = int(r), int(p)
-                # drop remainder
-                if r > 0:
-                    c = c[:-r]
-                    remainders.append(c[-r:])
-                # column becomes batch
-                c = c.view(p, -1)
-                # drop exceeding
-                c = c[:, :m]
-                sequence.append(c)
-                remainders.append(c[:,m:].flatten())
+        # cleanup rounding edge-cases
+        remainder = batch_size - class_samples_per_batch.sum()
+        largest_class = np.argmax(class_samples_per_batch)
+        class_samples_per_batch[largest_class] += remainder
 
-        r = torch.concat(remainders)
-        r = r[torch.randperm(len(r))]
-        sequence = torch.concat(sequence, dim=0).T.flatten()
-        sequence = torch.concat([sequence, r], dim=0)
+        assert class_samples_per_batch.sum() == batch_size
 
-    return torch.LongTensor(sequence)
+        proportions_of_class_per_batch = class_samples_per_batch / batch_size
+        self.logger.info(f'Rounded batch class distribution {proportions_of_class_per_batch}')
+
+        proportions_of_samples_per_batch = class_samples_per_batch / class_sizes
+
+        self.logger.info(f'Expecting {class_samples_per_batch} samples of each class per batch, '
+                         f'over {n_batches} batches of size {batch_size}')
+
+        oversample_rates = proportions_of_samples_per_batch * n_batches
+        self.logger.info(f'Sampling rates: {oversample_rates}')
+
+        return class_samples_per_batch
 
 
-class Weighted_Random_Fixed_Sequencer:
-    def __init__(self, labels, batch_size, shuffle, weights, method, sweep):
-        class_labels = get_class_labels(labels, shuffle)
-        self.sequence = stack_batch(class_labels, batch_size, weights, method, sweep)
+class WeightedRandomBatchSampler(BatchSampler):
+    """
+    Samples with replacement according to the provided weights.
+    Parameters
+    ----------
+    class_weights : `numpy.array(int)`
+        The number of samples of each class to include in each batch.
+    class_idxs : 2D list of ints
+        The indices that correspond to samples of each class.
+    batch_size : int
+        The size of each batch yielded.
+    n_batches : int
+        The number of batches to yield.
+    """
+
+    def __init__(self, class_weights, class_idxs, batch_size, n_batches):
+        self.sample_idxs = []
+        for idxs in class_idxs:
+            self.sample_idxs.extend(idxs)
+
+        sample_weights = []
+        for c, weight in enumerate(class_weights):
+            sample_weights.extend([weight] * len(class_idxs[c]))
+
+        self.sampler = WeightedRandomSampler(sample_weights, batch_size, replacement=True)
+        self.n_batches = n_batches
 
     def __iter__(self):
-        return iter(self.sequence)
+        for bidx in range(self.n_batches):
+            selected = []
+            for idx in self.sampler:
+                selected.append(self.sample_idxs[idx])
+            yield selected
 
     def __len__(self):
-        return len(self.sequence)
+        return self.n_batches
 
 
-class Weighted_Random_Sampled_Sequencer:
-    def __init__(self, labels, batch_size, shuffle, weights, method, sweep):
-        class_labels = get_class_labels(labels, shuffle)
-        pass
+class WeightedFixedBatchSampler(BatchSampler):
+    """
+    Ensures each batch contains a given class distribution.
+    The lists of indices for each class are shuffled at the start of each call to `__iter__`.
+    Parameters
+    ----------
+    class_samples_per_batch : `numpy.array(int)`
+        The number of samples of each class to include in each batch.
+    class_idxs : 2D list of ints
+        The indices that correspond to samples of each class.
+    n_batches : int
+        The number of batches to yield.
+    """
+
+    def __init__(self, class_samples_per_batch, class_idxs, n_batches):
+        self.class_samples_per_batch = class_samples_per_batch
+        self.class_idxs = [CircularList(idx) for idx in class_idxs]
+        self.n_batches = n_batches
+
+        self.n_classes = len(self.class_samples_per_batch)
+        self.batch_size = self.class_samples_per_batch.sum()
+
+        assert len(self.class_samples_per_batch) == len(self.class_idxs)
+        assert isinstance(self.n_batches, int)
+
+    def _get_batch(self, start_idxs):
+        selected = []
+        for c, size in enumerate(self.class_samples_per_batch):
+            selected.extend(self.class_idxs[c][start_idxs[c]:start_idxs[c] + size])
+        np.random.shuffle(selected)
+        return selected
+
+    def __iter__(self):
+        [cidx.shuffle() for cidx in self.class_idxs]
+        start_idxs = np.zeros(self.n_classes, dtype=int)
+        for bidx in range(self.n_batches):
+            yield self._get_batch(start_idxs)
+            start_idxs += self.class_samples_per_batch
+
+    def __len__(self):
+        return self.n_batches
+
+
+class CircularList:
+    """
+    Applies modulo function to indexing.
+    """
+    def __init__(self, items):
+        self._items = items
+        self._mod = len(self._items)
+        self.shuffle()
+
+    def shuffle(self):
+        np.random.shuffle(self._items)
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            return [self[i] for i in range(key.start, key.stop)]
+        return self._items[key % self._mod]
+
+        
+if __name__ == "__main__":
+    from torch.utils.data import Dataset, DataLoader
+
+    class_idxs = [
+        [1, 2, 3, 4, 5],
+        [6, 7, 8, 9, 10],
+        [11, 12],
+        [13, 14, 15, 16, 17, 18, 19, 20]
+    ]
+
+    batch_sampler = SamplerFactory().get(
+        class_idxs=class_idxs,
+        batch_size=32,
+        n_batches=250,
+        alpha=0.5,
+        kind='fixed'
+    )

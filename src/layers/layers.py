@@ -5,15 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-def conv_block(
-    in_f: int = 1,
-    out_f: int = 1,
-    activation: Optional[str] = None,
-    dropout_p: float = 0,
-    pool: int = 1,
-    *args: Any,
-    **kwargs: Any,
-) -> nn.Sequential:
+def conv_block( in_f: int = 1, out_f: int = 1, activation: Optional[str] = None, dropout_p: float = 0, pool: int = 1, *args: Any, **kwargs: Any,) -> nn.Sequential:
     activations = nn.ModuleDict([["lrelu", nn.LeakyReLU()], ["relu", nn.ReLU()]])
 
     seq = OrderedDict()
