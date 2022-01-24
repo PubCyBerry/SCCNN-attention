@@ -4,7 +4,7 @@ from typing import Optional
 from copy import deepcopy
 
 from src.runners import Base_Runner
-from src.data import ROIDataset
+from src.data import ROIDataset, SITES_DICT
 from src.datamodules import LOSODataModule
 from src.tasks import ClassificationTask
 from src.utils import plot_paper
@@ -16,8 +16,8 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 
-# from pytorch_lightning import seed_everything
-# seed_everything(41)
+from pytorch_lightning import seed_everything
+seed_everything(41)
 
 
 class LOSO_Runner(Base_Runner):
@@ -45,19 +45,19 @@ class LOSO_Runner(Base_Runner):
     def run(self, profiler: Optional[str] = None):
         self.version = len(os.listdir(self.log.checkpoint_path))
 
-        # nyu, kki, peking, ohsu, ni
-        path = glob(os.path.join(self.data.path, "*.pickle"))
-        # nyu, peking, ohsu, kki, ni
-        path[1:4] = path[2], path[3], path[1]
+        # # nyu, kki, peking, ohsu, ni
+        # path = glob(os.path.join(self.data.path, "*.pickle"))
+        # # nyu, peking, ohsu, kki, ni
+        # path[1:4] = path[2], path[3], path[1]
+        # SITES = ["Peking", "KKI", "NI", "NYU", "OHSU"]
 
         final_results = list()
-        for i in range(len(path)):
-            train_site = deepcopy(path)
-            test_site = train_site.pop(i)
-
+        for i in [5, 1, 6, 3, 4]:
+            train_site = deepcopy(list(SITES_DICT.keys()))
+            test_site = train_site.pop(train_site.index(i))
             self.data.train_site = train_site
             self.data.test_site = test_site
-            site_str = test_site.replace(".pickle", "").split("_")[-1]
+            site_str = SITES_DICT[i]
 
             dm = self.get_datamodule(dataset=ROIDataset, datamodule=LOSODataModule)
             model = self.get_network(Task=ClassificationTask)

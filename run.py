@@ -1,11 +1,12 @@
 import os
 from omegaconf import OmegaConf
+from pathlib import Path
 
 from src.runners import LOSO_Runner
 
-
-def main(cfg=OmegaConf.load("config/config.yaml")) -> None:
-    model_params = OmegaConf.load('config/models.yaml')
+CONFIG_DIR = Path('Configs')
+def main(cfg=OmegaConf.load(CONFIG_DIR / 'config.yaml')) -> None:
+    model_params = OmegaConf.load(CONFIG_DIR / 'models.yaml')
     cfg = OmegaConf.merge(cfg, model_params)
     cfg.merge_with_cli()
 

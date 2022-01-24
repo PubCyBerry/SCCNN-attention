@@ -35,7 +35,7 @@ class LOSODataModule(LightningDataModule):
                     for i in range(2)
                 ],
                 batch_size=batch_size,
-                n_batches=50,
+                n_batches=30,
                 alpha=1.0,
                 kind="fixed",
             ),
