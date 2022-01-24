@@ -144,3 +144,107 @@ class LOSO_Runner(Base_Runner):
             print(e)
 
         return
+
+
+
+
+from src.datamodules import MNISTDatamodule
+from typing import Any
+class MNIST_Runner(Base_Runner):
+    def get_callbacks(self, site: str):
+        """
+        Write only callbacks that logger is not necessary
+        """
+        checkpoint_callback = ModelCheckpoint(
+            dirpath=os.path.join(
+                self.log.checkpoint_path, f"version{self.version:03d}", site
+            ),
+            filename=os.path.join(f"model"),
+            monitor=f"{site.upper()}/Accuracy/val",
+            mode="max",
+            verbose=False,
+            save_top_k=1,
+        )
+
+        callbacks = dict(
+            filter(lambda item: item[0].endswith("callback"), vars().items())
+        ).values()
+        callbacks = list(callbacks)
+        return callbacks if len(callbacks) > 0 else None
+
+
+    def run(self, profiler: Optional[str] = None):
+        self.version = len(os.listdir(self.log.checkpoint_path))
+
+        final_results = list()
+        for i in range(self.log.n_fold):
+            site_str = f"fold_{i+1}"
+            dm = self.get_datamodule(dataset=torch.utils.data.Dataset, datamodule=MNISTDatamodule)
+            dm.fold = i
+            model = self.get_network(Task=ClassificationTask)
+            model.prefix = site_str.upper() + "/"
+
+            trainer = Trainer(
+                logger=[
+                    TensorBoardLogger(
+                        save_dir=self.log.log_path,
+                        name=os.path.join(
+                            self.log.project_name,
+                            f"version{self.version:03d}",
+                            site_str,
+                        ),
+                        default_hp_metric=False,
+                        version=None,
+                        # log_graph=True, # inavailable due to bug
+                    ),
+                    WandbLogger(
+                        project=self.log.project_name,
+                        save_dir=self.log.log_path,
+                    ),
+                ],
+                # ! use all gpu
+                # gpus=-1,
+                # auto_select_gpus=True,
+                # ! use 2 gpu
+                # devices=2,
+                # accelerator="auto",
+                # strategy="ddp",
+                # ! use gpu 0
+                # devices=[0],
+                # accelerator="gpu",
+                devices=self.log.device.gpu,
+                accelerator="gpu",
+                check_val_every_n_epoch=self.log.val_log_freq_epoch,
+                log_every_n_steps=1,
+                num_sanity_val_steps=0,
+                max_epochs=self.log.epoch,
+                profiler=profiler,
+                fast_dev_run=self.log.dry_run,
+                callbacks=[
+                    *self.get_callbacks(site=site_str),
+                    wbc.WatchModel(),
+                    wbc.LogConfusionMatrix(),
+                    # wbc.LogF1PrecRecHeatmap(),
+                    # tbc.WatchModel(),
+                    # tbc.LogConfusionMatrix(),
+                    # tbc.LogF1PrecRecHeatmap(),
+                ],
+                precision=self.log.precision,
+            )
+            trainer.test_site_prefix = model.prefix
+
+            trainer.fit(model, datamodule=dm)
+            trainer.test(model, datamodule=dm, ckpt_path="best")
+            final_results.append(
+                trainer.callback_metrics[f"{model.prefix}Accuracy/test"]
+            )
+
+        try:
+            wb_logger = wbc.get_wandb_logger(trainer)
+            wb_logger.experiment.log(
+                {"overall_accuracy": torch.Tensor(final_results).mean().item()}
+            )
+        except Exception as e:
+            print(e)
+
+        return

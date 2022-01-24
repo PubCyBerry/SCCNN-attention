@@ -107,9 +107,9 @@ class LogConfusionMatrix(Callback):
                         plot_confusion_matrix_from_data(
                             y_test=targets,
                             predictions=preds,
-                            columns=["TDC", "ADHD"],
+                            columns=list(range(max(targets) + 1)),
                             cmap=sn.cubehelix_palette(as_cmap=True),
-                            fz=14,
+                            fz=12,
                         ),
                     ),
                 }

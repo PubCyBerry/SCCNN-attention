@@ -2,7 +2,7 @@ from copy import deepcopy
 import numpy as np
 from typing import Any, Optional, List, Dict
 from dataclasses import dataclass, field
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from pytorch_lightning import LightningDataModule
 from src.data import collate_fn, SamplerFactory
 
@@ -46,6 +46,41 @@ class LOSODataModule(LightningDataModule):
 
     def test_dataloader(self):
         return DataLoader(self.test_dataset, **self.loader.eval, collate_fn=collate_fn)
+
+        
+@dataclass
+class MNISTDatamodule(LightningDataModule):
+    data: Dict
+    loader: Dict
+    dataset: Dict
+
+    def setup(self, stage: Optional[str] = None):
+        from torchvision import datasets, transforms
+        from sklearn.model_selection import KFold
+        transform=transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,))
+        ])
+        if stage in ("fit", None):
+            train = datasets.MNIST('/workspace/Data/mnist', train=True, download=True,
+                            transform=transform)
+            folds = [split for split in KFold(5).split(range(len(train)))]
+            self.train_dataset = Subset(train, folds[self.fold][0])
+            self.val_dataset = Subset(train, folds[self.fold][1])
+
+        if stage in ("test", None):
+            self.test_dataset = datasets.MNIST('/workspace/Data/mnist', train=False,
+                            transform=transform)
+        
+    def train_dataloader(self):
+        return DataLoader(self.train_dataset, **self.loader.train)
+
+    def val_dataloader(self):
+        return DataLoader(self.val_dataset, **self.loader.eval)
+
+    def test_dataloader(self):
+        return DataLoader(self.test_dataset, **self.loader.eval)
+    
 
 
 if __name__ == "__main__":

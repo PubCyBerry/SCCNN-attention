@@ -134,6 +134,10 @@ def chunks(lst, n):
     div = int(np.ceil(len(lst) / n))
     return [lst[i : i + div] for i in range(0, len(lst), div)]
 
+    
+    
+
+
 
 if __name__ == "__main__":
     extract = Extract()
