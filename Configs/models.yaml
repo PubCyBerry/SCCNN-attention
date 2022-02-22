@@ -28,13 +28,59 @@ SCCNN:
     dropout_p: 0.3
     pool: 0
 
+SCCNN_bn:
+  conv_block1:
+    in_f: 1
+    out_f: 32
+    kernel_size: 3
+    activation: lrelu
+    dropout_p: 0
+    pool: 2
+    do_bn: True
+    func_after: True
+  conv_block2:
+    in_f: ${SCCNN.conv_block1.out_f}
+    out_f: 64
+    kernel_size: 3
+    activation: lrelu
+    dropout_p: 0
+    pool: 2
+    do_bn: True
+    func_after: True
+  conv_block3:
+    in_f: ${SCCNN.conv_block2.out_f}
+    out_f: 96
+    kernel_size: 3
+    activation: lrelu
+    dropout_p: 0.0
+    pool: 0
+    do_bn: False
+    func_after: True
+  conv_block4:
+    in_f: ${SCCNN.conv_block3.out_f}
+    out_f: 96
+    kernel_size: 3
+    activation: lrelu
+    dropout_p: 0
+    pool: 0
+    do_bn: False
+    func_after: True
+
+
 Attention: 
   input_dim: ${SCCNN.conv_block4.out_f}
   attention_dim: 64
   output_dim: 1
 
 Decoder: 
-  hidden_dim: 128
+  hidden_dim: 256
   output_dim: ${network.num_classes}
   dropout_p: 0
+
+
+LSTM:
+  input_size: ${SCCNN.conv_block4.out_f}
+  hidden_size: 256
+  num_layers: 1
+  bidirectional: True
 

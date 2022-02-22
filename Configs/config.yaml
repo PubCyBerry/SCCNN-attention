@@ -6,7 +6,7 @@ log:
   dry_run: false
   device:
     gpu:
-      - 0
+      - 1
   log_path: Logs
   checkpoint_path: Checkpoints
   precision: 32
@@ -16,7 +16,7 @@ loader:
     batch_size: 32
     num_workers: 8
     pin_memory: True
-    shuffle: False
+    shuffle: True
   eval:
     batch_size: 1000
     num_workers: 8
@@ -25,13 +25,17 @@ loader:
 
 data:
   path: Data/preprocessed/all
+  roi: False
 
 network:
   model: ${log.project_name}
   num_classes: 2
-  encoder: ${SCCNN}
+  encoder: ${SCCNN_bn}
   attention: ${Attention}
+  LSTM: ${LSTM}
   decoder: ${Decoder}
+  is_encoder_shared: True
+  encoderType: SCCNN_bn
 
 optimizer:
   optimizer: Adam

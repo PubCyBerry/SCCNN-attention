@@ -8,9 +8,13 @@ from src.data import Load, SITES_DICT
 
 
 class ROIDataset(Dataset):
-    def __init__(self, site: Union[List, str]) -> None:
+    def __init__(
+        self, site: Union[List, str], roi_rank: list = list(range(116))
+    ) -> None:
+        assert not isinstance(roi_rank, list), "roi_rank must be list"
         load = Load()
         self.data, self.labels = load.loadSiteData(site)
+        self.roi_rank = roi_rank
 
     def __len__(self):
         return len(self.labels)
@@ -20,7 +24,7 @@ class ROIDataset(Dataset):
         data shape: (116, time series)
         label: not one hot. 0 or 1.
         """
-        data = self.data[index]
+        data = self.data[index][self.roi_rank]
         label = self.labels[index]
         return data, label
 
@@ -64,24 +68,41 @@ if __name__ == "__main__":
         train_site = deepcopy(list(SITES_DICT.keys()))
         test_site = train_site.pop(i)
 
-        train_dataset = ROIDataset(train_site)
+        train_dataset = ROIDataset(train_site, roi_rank=[3, 11, 91, 1])
         test_dataset = ROIDataset(test_site)
         print(train_site, test_site)
         print(len(train_dataset), len(test_dataset))
 
         batch_size = 32
         num_workers = 8
+        # for x, y in DataLoader(
+        #     train_dataset,
+        #     batch_sampler=SamplerFactory().get(
+        #         class_idxs=[
+        #             np.where(train_dataset.labels == i)[0].tolist() for i in range(2)
+        #         ],
+        #         batch_size=batch_size,
+        #         n_batches=50,
+        #         alpha=0.0,
+        #         kind="fixed",
+        #     ),
+        #     num_workers=num_workers,
+        #     collate_fn=collate_fn,
+        #     pin_memory=True,
+        # ):
+        #     print(
+        #         "{}, {}, {}, {}".format(
+        #             x.size(), x.is_pinned(), y.size(), y.is_pinned()
+        #         )
+        #     )
+        #     for i, bins in enumerate(np.bincount(y)):
+        #         print(f"{i}: {bins:2d} ", end="")
+        #     print()
+
         for x, y in DataLoader(
             train_dataset,
-            batch_sampler=SamplerFactory().get(
-                class_idxs=[
-                    np.where(train_dataset.labels == i)[0].tolist() for i in range(2)
-                ],
-                batch_size=batch_size,
-                n_batches=50,
-                alpha=0.0,
-                kind="fixed",
-            ),
+            shuffle=True,
+            batch_size=32,
             num_workers=num_workers,
             collate_fn=collate_fn,
             pin_memory=True,
@@ -94,4 +115,3 @@ if __name__ == "__main__":
             for i, bins in enumerate(np.bincount(y)):
                 print(f"{i}: {bins:2d} ", end="")
             print()
-            # sleep(1)

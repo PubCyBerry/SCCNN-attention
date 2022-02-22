@@ -37,7 +37,8 @@ class ClassificationTask(LightningModule):
     def _shared_step(self, batch, batch_idx):
         x, targets = batch
         preds = self.model(x)
-        loss = F.nll_loss(preds, targets)
+        loss = F.cross_entropy(preds, targets)
+        # loss = F.nll_loss(preds, targets)
         return loss, preds, targets
 
     def _shared_epoch_end(self, outputs, loss_name, task=None):
@@ -80,4 +81,5 @@ class ClassificationTask(LightningModule):
         opt = getattr(optim, self.hparams.opt.optimizer)(
             self.model.parameters(), lr=self.hparams.opt.lr
         )
-        return opt
+        sch = lr_scheduler.StepLR(opt, step_size=1, gamma=0.99)
+        return [opt], [sch]

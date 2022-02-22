@@ -2,7 +2,7 @@ import os
 from omegaconf import OmegaConf
 from pathlib import Path
 
-from src.runners import LOSO_Runner, SS_Runner
+from src.runners.pytorch_runner import main_pytorch
 
 CONFIG_DIR = Path('Configs')
 def main(cfg=OmegaConf.load(CONFIG_DIR / 'config.yaml')) -> None:
@@ -10,22 +10,12 @@ def main(cfg=OmegaConf.load(CONFIG_DIR / 'config.yaml')) -> None:
     cfg = OmegaConf.merge(cfg, model_params)
     cfg.merge_with_cli()
 
-    # runner = LOSO_Runner(
-    #     log=cfg.log,
-    #     optimizer=cfg.optimizer,
-    #     loader=cfg.loader,
-    #     network=cfg.network,
-    #     data=cfg.data,
-    # )
-
-    runner = LOSO_Runner(
-        log=cfg.log,
+    main_pytorch(log=cfg.log,
         optimizer=cfg.optimizer,
         loader=cfg.loader,
         network=cfg.network,
-        data=cfg.data,
-    )
-    metrics = runner.run(profiler=cfg.get("profiler", "simple"))
+        data=cfg.data)
+
 
 
 if __name__ == "__main__":
