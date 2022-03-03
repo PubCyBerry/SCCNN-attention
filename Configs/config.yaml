@@ -25,7 +25,6 @@ loader:
 
 data:
   path: Data/preprocessed/all
-  roi: False
 
 network:
   model: ${log.project_name}

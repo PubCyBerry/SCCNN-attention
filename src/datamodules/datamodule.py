@@ -15,14 +15,12 @@ class LOSODataModule(LightningDataModule):
     dataset: Dict
 
     def setup(self, stage: Optional[str] = None):
-
-            
         if stage in ("fit", None):
-            self.train_dataset = self.dataset(self.data.train_site, self.data.roi)
-            self.val_dataset = self.dataset(self.data.test_site, self.data.roi)
+            self.train_dataset = self.dataset(self.data.train_site)
+            self.val_dataset = self.dataset(self.data.test_site)
 
         if stage in ("test", None):
-            self.test_dataset = self.dataset(self.data.test_site, self.data.roi)
+            self.test_dataset = self.dataset(self.data.test_site)
 
     def train_dataloader(self):
         conf = deepcopy(self.loader.train)

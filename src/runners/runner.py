@@ -1,5 +1,6 @@
 import os
 import pickle
+import pandas as pd
 from glob import glob
 from typing import Optional
 from copy import deepcopy
@@ -42,6 +43,7 @@ class LOSO_Runner(Base_Runner):
             verbose=False,
             save_top_k=1,
         )
+        
 
         callbacks = dict(
             filter(lambda item: item[0].endswith("callback"), vars().items())
@@ -53,14 +55,15 @@ class LOSO_Runner(Base_Runner):
         self.version = len(os.listdir(self.log.checkpoint_path))
 
         # TODO: extract to function
-        if self.data.get('roi', None) == None:
+        if self.data.get('roi', None) is None:
             self.data.roi = list(range(116))
         else:
-            if isinstance(self.data.roi, str):
-                self.data.roi = list(int(self.data.roi))
-
-            if not isinstance(self.data.roi, list):
-                self.data.roi = [self.data.roi]
+            df = pd.read_excel('Data/nitrc_niak/roi_rank.xlsx', engine='openpyxl')
+            if 'roi_rank' in self.log.project_name:
+                df = df.sort_values(by=['mean'], ascending=False)
+                self.data.roi = df['roi'][:int(self.data.roi)+1].tolist()
+            else:
+                self.data.roi = [int(self.data.roi)]
         self.network.roi_rank = self.data.roi
         print('ROI = {}'.format(self.data.roi))
 
