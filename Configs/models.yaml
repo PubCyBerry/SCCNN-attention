@@ -80,7 +80,7 @@ Decoder:
 
 LSTM:
   input_size: ${SCCNN.conv_block4.out_f}
-  hidden_size: 256
+  hidden_size: 128
   num_layers: 1
   bidirectional: True
 

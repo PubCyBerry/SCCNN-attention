@@ -18,7 +18,8 @@ from src import models
 
 
 class ClassificationTask(LightningModule):
-    prefix = ''
+    prefix = ""
+
     def __init__(self, opt: Dict = None, net: Dict = None, inputs: Any = None) -> None:
         super().__init__()
         self.save_hyperparameters()
@@ -48,7 +49,10 @@ class ClassificationTask(LightningModule):
         metrics = self.get_metrics(all_preds, all_y)
         logger_log = {
             f"{self.prefix.upper()}Loss/{task}": avg_loss.item(),
-            **{f"{self.prefix.upper()}{key}/{task}": value.cpu().detach() for key, value in metrics.items()},
+            **{
+                f"{self.prefix.upper()}{key}/{task}": value.cpu().detach()
+                for key, value in metrics.items()
+            },
             "step": torch.tensor(self.current_epoch, dtype=torch.float32),
         }
         return avg_loss, logger_log
@@ -79,7 +83,7 @@ class ClassificationTask(LightningModule):
 
     def configure_optimizers(self):
         opt = getattr(optim, self.hparams.opt.optimizer)(
-            self.model.parameters(), lr=self.hparams.opt.lr
+            self.model.parameters(), lr=self.hparams.opt.lr, weight_decay=5e-4
         )
         sch = lr_scheduler.StepLR(opt, step_size=1, gamma=0.99)
         return [opt], [sch]

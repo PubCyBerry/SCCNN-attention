@@ -25,7 +25,7 @@ from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 
 def initialize_weights(m):
   if isinstance(m, nn.Conv1d):
-      nn.init.kaiming_uniform_(m.weight.data)
+      nn.init.xavier_normal_(m.weight.data)
 
 
 class LOSO_Runner(Base_Runner):
