@@ -6,7 +6,7 @@ log:
   dry_run: false
   device:
     gpu:
-      - 1
+      - 0
   log_path: Logs
   checkpoint_path: Checkpoints
   precision: 32
