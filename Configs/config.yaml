@@ -1,4 +1,5 @@
 log:
+  model_name: SCCNN_attention
   project_name: SCCNN_attention
   val_log_freq_epoch: 1
   epoch: 100
@@ -27,7 +28,7 @@ data:
   path: Data/preprocessed/all
 
 network:
-  model: ${log.project_name}
+  model: ${log.model_name}
   num_classes: 2
   encoder: ${SCCNN_bn}
   attention: ${Attention}

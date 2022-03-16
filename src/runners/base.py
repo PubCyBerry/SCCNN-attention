@@ -18,19 +18,29 @@ class Base_Runner:
     network: Dict
     data: Dict
 
-    def get_network(self, Task: LightningModule = ClassificationTask, *args: Any, **kwargs: Any) -> LightningModule:
+    def get_network(
+        self, Task: LightningModule = ClassificationTask, *args: Any, **kwargs: Any
+    ) -> LightningModule:
         model = Task(self.optimizer, self.network, *args, **kwargs)
         return model
 
-    def get_datamodule(self, dataset: Dataset, datamodule: LightningDataModule, *args: Any, **kwargs: Any) -> LightningDataModule:
+    def get_datamodule(
+        self,
+        dataset: Dataset,
+        datamodule: LightningDataModule,
+        *args: Any,
+        **kwargs: Any
+    ) -> LightningDataModule:
         datamodule = datamodule(self.data, self.loader, dataset, *args, **kwargs)
         return datamodule
 
     def get_callbacks(self):
-        '''
+        """
         add callbacks here
-        '''
-        callbacks = dict(filter(lambda item: item[0].endswith('callback'), vars().items())).values()
+        """
+        callbacks = dict(
+            filter(lambda item: item[0].endswith("callback"), vars().items())
+        ).values()
         callbacks = list(callbacks)
         return callbacks if len(callbacks) > 0 else None
 
@@ -41,7 +51,7 @@ class Base_Runner:
         trainer = Trainer(
             logger=TensorBoardLogger(
                 save_dir=self.log.log_path,
-                name=self.log.project_name,
+                name=self.log.model_name,
                 default_hp_metric=True,
                 # log_graph=False, # inavailable due to bug
             ),
