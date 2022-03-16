@@ -1,3 +1,4 @@
+from re import U
 from typing import Optional, Dict, Any
 import numpy as np
 
@@ -429,3 +430,5 @@ if __name__ == "__main__":
             # print()
             out = qnn(x)
             print('SITE',i, 'iter',j, out, y, out.size(), y.size())
+
+            

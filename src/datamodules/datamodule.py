@@ -51,89 +51,6 @@ class LOSODataModule(LightningDataModule):
         return DataLoader(self.test_dataset, **self.loader.eval, collate_fn=collate_fn)
 
 
-@dataclass
-class SSDataModule(LightningDataModule):
-    data: Dict
-    loader: Dict
-    dataset: Dict
-
-    def setup(self, stage: Optional[str] = None):
-        total_dataset = self.dataset(self.data.train_site)
-        data_indices = list(range(len(total_dataset)))
-        self.train_index, self.test_index = train_test_split(
-            data_indices, test_size=0.2
-        )
-        if stage in ("fit", None):
-            self.train_dataset = Subset(total_dataset, self.train_index)
-            self.val_dataset = Subset(total_dataset, self.test_index)
-
-        if stage in ("test", None):
-            self.test_dataset = Subset(total_dataset, self.test_index)
-
-    def train_dataloader(self):
-        conf = deepcopy(self.loader.train)
-        conf.shuffle = False
-        batch_size = conf.pop("batch_size")
-        data_labels = np.array([b[-1] for b in self.train_dataset])
-        class_index = [np.where(data_labels == i)[0].tolist() for i in range(2)]
-        n_batches = len(data_labels) // batch_size + 5
-
-        return DataLoader(
-            self.train_dataset,
-            **conf,
-            collate_fn=collate_fn,
-            batch_sampler=SamplerFactory().get(
-                class_idxs=class_index,
-                batch_size=batch_size,
-                n_batches=n_batches,
-                alpha=0.1,
-                kind="fixed",
-            ),
-        )
-
-    def val_dataloader(self):
-        return DataLoader(self.val_dataset, **self.loader.eval, collate_fn=collate_fn)
-
-    def test_dataloader(self):
-        return DataLoader(self.test_dataset, **self.loader.eval, collate_fn=collate_fn)
-
-
-@dataclass
-class MNISTDatamodule(LightningDataModule):
-    data: Dict
-    loader: Dict
-    dataset: Dict
-
-    def setup(self, stage: Optional[str] = None):
-        from torchvision import datasets, transforms
-        from sklearn.model_selection import KFold
-
-        transform = transforms.Compose(
-            [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
-        )
-        if stage in ("fit", None):
-            train = datasets.MNIST(
-                "/workspace/Data/mnist", train=True, download=True, transform=transform
-            )
-            folds = [split for split in KFold(5).split(range(len(train)))]
-            self.train_dataset = Subset(train, folds[self.fold][0])
-            self.val_dataset = Subset(train, folds[self.fold][1])
-
-        if stage in ("test", None):
-            self.test_dataset = datasets.MNIST(
-                "/workspace/Data/mnist", train=False, transform=transform
-            )
-
-    def train_dataloader(self):
-        return DataLoader(self.train_dataset, **self.loader.train)
-
-    def val_dataloader(self):
-        return DataLoader(self.val_dataset, **self.loader.eval)
-
-    def test_dataloader(self):
-        return DataLoader(self.test_dataset, **self.loader.eval)
-
-
 if __name__ == "__main__":
     from omegaconf import OmegaConf
     from src.data import ROIDataset, SITES_DICT
@@ -149,7 +66,6 @@ if __name__ == "__main__":
         # conf.data.train_site = test_site
 
         dm = LOSODataModule(conf.data, conf.loader, ROIDataset)
-        # dm = SSDataModule(conf.data, conf.loader, ROIDataset)
         dm.setup()
         counter = 0
         for x, y in dm.train_dataloader():

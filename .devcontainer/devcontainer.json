@@ -21,28 +21,6 @@
 
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
-		"tomoki1207.pdf",
-		"redhat.vscode-yaml",
-		"albert.tabout",
-		"tabnine.tabnine-vscode",
-		"foxundermoon.shell-format",
-		"msrvida.vscode-sanddance",
-		"mechatroner.rainbow-csv",
-		"kevinrose.vsc-python-indent",
-		"njpwerner.autodocstring",
-		"ms-python.python",
-		"ms-python.vscode-pylance",
-		"esbenp.prettier-vscode",
-		"hoovercj.vscode-power-mode",
-		"davidanson.vscode-markdownlint",
-		"shd101wyy.markdown-preview-enhanced",
-		"yzhang.markdown-all-in-one",
-		"ms-vsliveshare.vsliveshare-pack",
-		"ritwickdey.liveserver",
-		"oderwat.indent-rainbow",
-		"hediet.debug-visualizer",
-		"streetsidesoftware.code-spell-checker",
-		"wwm.better-align"
 	]
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.

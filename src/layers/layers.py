@@ -187,3 +187,5 @@ if __name__ == "__main__":
     print(model)
     print(model(torch.randn((32, 176))).size())
     print(model(torch.randn((32, 236))).size())
+
+

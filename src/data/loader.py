@@ -8,14 +8,9 @@ from src.data import Load, SITES_DICT
 
 
 class ROIDataset(Dataset):
-    def __init__(
-        # self, site: Union[List, str], roi_rank: list = list(range(116))
-        self, site: Union[List, str]
-    ) -> None:
-        # assert not isinstance(roi_rank, list), "roi_rank must be list"
+    def __init__( self, site: Union[List, str]) -> None:
         load = Load()
         self.data, self.labels = load.loadSiteData(site)
-        # self.roi_rank = roi_rank
 
     def __len__(self):
         return len(self.labels)
@@ -25,7 +20,6 @@ class ROIDataset(Dataset):
         data shape: (116, time series)
         label: not one hot. 0 or 1.
         """
-        # data = self.data[index][self.roi_rank]
         data = self.data[index]
         label = self.labels[index]
         return data, label
