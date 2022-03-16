@@ -29,7 +29,6 @@ def initialize_weights(m):
         nn.init.xavier_normal_(m.weight.data)
     elif isinstance(m, nn.Linear):
         nn.init.xavier_normal_(m.weight.data)
-        print(m)
 
 
 class LOSO_Runner(Base_Runner):
