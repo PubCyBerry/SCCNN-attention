@@ -18,7 +18,7 @@ def conv_block(
     *args: Any,
     **kwargs: Any,
 ) -> nn.Sequential:
-    activations = nn.ModuleDict([["lrelu", nn.LeakyReLU()], ["relu", nn.ReLU()]])
+    activations = nn.ModuleDict([["lrelu", nn.LeakyReLU(negative_slope=0.3)], ["relu", nn.ReLU()]])
 
     seq = OrderedDict()
     seq.update({"Conv": nn.Conv1d(in_f, out_f, *args, **kwargs)})
@@ -167,7 +167,7 @@ class Decoder(nn.Module):
             OrderedDict(
                 [
                     ["linear", nn.Linear(input_dim, hidden_dim)],
-                    ["relu", nn.ReLU()],
+                    ["relu", nn.LeakyReLU(negative_slope=0.3)],
                     ["dropout", nn.Dropout(dropout_p)],
                     ["linear_out", nn.Linear(hidden_dim, output_dim)],
                     ["softmax", nn.Softmax(dim=1)],
