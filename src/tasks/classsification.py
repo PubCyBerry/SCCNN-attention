@@ -83,7 +83,7 @@ class ClassificationTask(LightningModule):
 
     def configure_optimizers(self):
         opt = getattr(optim, self.hparams.opt.optimizer)(
-            self.model.parameters(), lr=self.hparams.opt.lr, weight_decay=5e-4
+            self.model.parameters(), lr=self.hparams.opt.lr, weight_decay=5e-4, betas=(0.9, 0.999)
         )
         sch = lr_scheduler.StepLR(opt, step_size=1, gamma=0.99)
         return [opt], [sch]
