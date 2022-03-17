@@ -38,7 +38,7 @@ class LOSODataModule(LightningDataModule):
                     for i in range(2)
                 ],
                 batch_size=batch_size,
-                n_batches=30,
+                n_batches=len(self.train_dataset)//batch_size + 5,
                 alpha=1.0,
                 kind="fixed",
             ),
