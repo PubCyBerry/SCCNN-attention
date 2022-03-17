@@ -70,7 +70,7 @@ class LOSO_Runner(Base_Runner):
         else:
             if "roi_rank" in self.log.project_name:
                 with open("Data/nitrc_niak/roi_rank.pkl", "rb") as f:
-                    self.data.roi = pickle.load(f)[: int(self.data.roi) + 1]
+                    self.data.roi = pickle.load(f)[: int(self.data.roi)]
 
             else:
                 self.data.roi = [int(self.data.roi)]
