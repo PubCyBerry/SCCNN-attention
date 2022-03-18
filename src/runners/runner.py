@@ -31,12 +31,12 @@ def initialize_weights(m):
         nn.init.xavier_normal_(m.weight.data)
     elif isinstance(m, nn.LSTM):
         for name, param in m.named_parameters():
-            if 'bias' in name:
+            if "bias" in name:
                 nn.init.constant_(param, 0.0)
-            elif 'weight_ih' in name:
-                 nn.init.xavier_normal_(param)
-            elif 'weight_hh' in name:
-                 nn.init.orthogonal_(param)
+            elif "weight_ih" in name:
+                nn.init.xavier_normal_(param)
+            elif "weight_hh" in name:
+                nn.init.orthogonal_(param)
 
 
 class LOSO_Runner(Base_Runner):
@@ -46,7 +46,10 @@ class LOSO_Runner(Base_Runner):
         """
         checkpoint_callback = ModelCheckpoint(
             dirpath=os.path.join(
-                self.log.checkpoint_path, f"version{self.version:03d}", site
+                self.log.checkpoint_path,
+                self.log.project_name,
+                f"version{self.version:03d}",
+                site,
             ),
             filename=os.path.join(f"model"),
             monitor=f"{site.upper()}/Accuracy/val",
@@ -62,7 +65,9 @@ class LOSO_Runner(Base_Runner):
         return callbacks if len(callbacks) > 0 else None
 
     def run(self, profiler: Optional[str] = None):
-        self.version = len(os.listdir(self.log.checkpoint_path))
+        self.version = len(
+            os.listdir(os.path.join(self.log.checkpoint_path, self.log.project_name))
+        )
 
         # TODO: extract to function
         if self.data.get("roi", None) is None:
