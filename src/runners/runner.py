@@ -26,9 +26,11 @@ seed_everything(41)
 
 def initialize_weights(m):
     if isinstance(m, nn.Conv1d):
-        nn.init.xavier_normal_(m.weight.data)
+        # nn.init.xavier_normal_(m.weight.data)
+        nn.init.kaiming_normal_(m.weight.data)
     elif isinstance(m, nn.Linear):
-        nn.init.xavier_normal_(m.weight.data)
+        # nn.init.xavier_normal_(m.weight.data)
+        nn.init.kaiming_normal_(m.weight.data)
     elif isinstance(m, nn.LSTM):
         for name, param in m.named_parameters():
             if "bias" in name:
@@ -65,6 +67,7 @@ class LOSO_Runner(Base_Runner):
         return callbacks if len(callbacks) > 0 else None
 
     def run(self, profiler: Optional[str] = None):
+        os.makedirs(os.path.join(self.log.checkpoint_path, self.log.project_name), exist_ok=True)
         self.version = len(
             os.listdir(os.path.join(self.log.checkpoint_path, self.log.project_name))
         )
