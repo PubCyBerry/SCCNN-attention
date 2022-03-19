@@ -58,7 +58,7 @@ SCCNN_bn:
     func_after: True
   conv_block4:
     in_f: ${SCCNN.conv_block3.out_f}
-    out_f: 96
+    out_f: 128
     kernel_size: 3
     activation: lrelu
     dropout_p: 0
@@ -73,14 +73,14 @@ Attention:
   output_dim: 1
 
 Decoder: 
-  hidden_dim: 256
+  hidden_dim: 512
   output_dim: ${network.num_classes}
   dropout_p: 0
 
 
 LSTM:
   input_size: ${SCCNN.conv_block4.out_f}
-  hidden_size: 128
+  hidden_size: 256
   num_layers: 1
   bidirectional: True
 
