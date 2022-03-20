@@ -34,11 +34,13 @@ def initialize_weights(m):
     elif isinstance(m, nn.LSTM):
         for name, param in m.named_parameters():
             if "bias" in name:
-                nn.init.constant_(param, 0.0)
+                nn.init.constant_(param, 0.01)
             elif "weight_ih" in name:
+                # nn.init.xavier_normal_(param)
                 nn.init.xavier_normal_(param)
             elif "weight_hh" in name:
-                nn.init.orthogonal_(param)
+                # nn.init.orthogonal_(param)
+                nn.init.xavier_normal_(param)
 
 
 class LOSO_Runner(Base_Runner):
