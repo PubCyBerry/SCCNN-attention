@@ -32,7 +32,7 @@ SCCNN_bn:
   conv_block1:
     in_f: 1
     out_f: 32
-    kernel_size: 3
+    kernel_size: 4
     activation: lrelu
     dropout_p: 0
     pool: 2
