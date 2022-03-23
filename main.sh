@@ -10,11 +10,12 @@ dir_path=$(dirname "${BASH_SOURCE[0]}")
 
 project_name="${1:-SCCNN_LSTM_roi_rank}"
 model_name="${2:-SCCNN_LSTM_roi_rank}"
+gpu="${3:-0}"
 for i in $(seq 1 20); do
     python run.py \
         log.project_name="$project_name" \
         log.model_name="$model_name" \
         optimizer.lr=1e-4 \
-        log.device.gpu=0 \
+        log.device.gpu="$gpu" \
         data.roi=$i
 done
