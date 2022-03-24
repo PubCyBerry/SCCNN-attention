@@ -13,7 +13,6 @@ from multiprocessing import Pool
 from concurrent.futures import ThreadPoolExecutor
 import concurrent.futures
 
-# DATA_DIR = "/workspace/Data/nitrc_niak"
 DATA_DIR = f"Data/nitrc_niak"
 SITE_INDEX = [1, 3, 4, 5, 6]
 SITES = ["Peking", "KKI", "NI", "NYU", "OHSU"]

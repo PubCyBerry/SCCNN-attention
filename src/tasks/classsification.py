@@ -87,5 +87,5 @@ class ClassificationTask(LightningModule):
         )
         # sch = lr_scheduler.StepLR(opt, step_size=1, gamma=0.99)
         sch = lr_scheduler.StepLR(opt, step_size=1, gamma=0.99)
-        # return [opt]
-        return [opt], [sch]
+        return [opt]
+        # return [opt], [sch]

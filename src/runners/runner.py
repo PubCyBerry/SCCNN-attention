@@ -33,14 +33,14 @@ def initialize_weights(m):
         nn.init.kaiming_normal_(m.weight.data)
     elif isinstance(m, nn.LSTM):
         for name, param in m.named_parameters():
-            if "bias" in name:
-                nn.init.constant_(param, 0.00)
-            elif "weight_ih" in name:
-                # nn.init.xavier_normal_(param)
-                nn.init.xavier_normal_(param)
-            elif "weight_hh" in name:
-                nn.init.orthogonal_(param)
-                # nn.init.xavier_normal_(param)
+            mul = param.shape[0] // 4
+            for idx in range(4):
+                if "bias" in name:
+                    nn.init.constant_(param, 0.00)
+                elif "weight_ih" in name:
+                    nn.init.xavier_normal_(param.data[idx*mul:(idx+1)*mul])
+                elif "weight_hh" in name:
+                    nn.init.orthogonal_(param.data[idx*mul:(idx+1)*mul])
 
 
 class LOSO_Runner(Base_Runner):
@@ -69,7 +69,9 @@ class LOSO_Runner(Base_Runner):
         return callbacks if len(callbacks) > 0 else None
 
     def run(self, profiler: Optional[str] = None):
-        os.makedirs(os.path.join(self.log.checkpoint_path, self.log.project_name), exist_ok=True)
+        os.makedirs(
+            os.path.join(self.log.checkpoint_path, self.log.project_name), exist_ok=True
+        )
         self.version = len(
             os.listdir(os.path.join(self.log.checkpoint_path, self.log.project_name))
         )
