@@ -12,13 +12,15 @@ def conv_block(
     activation: Optional[str] = None,
     dropout_p: float = 0,
     pool: int = 1,
-    do_bn:bool = False,
-    func_after:bool = False,
-    func_last:bool = False,
+    do_bn: bool = False,
+    func_after: bool = False,
+    func_last: bool = False,
     *args: Any,
     **kwargs: Any,
 ) -> nn.Sequential:
-    activations = nn.ModuleDict([["lrelu", nn.LeakyReLU(negative_slope=0.1)], ["relu", nn.ReLU()]])
+    activations = nn.ModuleDict(
+        [["lrelu", nn.LeakyReLU(negative_slope=0.1)], ["relu", nn.ReLU()]]
+    )
 
     seq = OrderedDict()
     seq.update({"Conv": nn.Conv1d(in_f, out_f, *args, **kwargs)})
@@ -180,6 +182,19 @@ class Decoder(nn.Module):
         return x
 
 
+class Hybrid_Decoder(nn.Module):
+    def __init__(
+        self,
+        input_dim: int = 512,
+        hidden_dim: int = 512,
+        output_dim: int = 2,
+        dropout_p: float = 0,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__()
+
+
 if __name__ == "__main__":
     import torch
 
@@ -187,5 +202,3 @@ if __name__ == "__main__":
     print(model)
     print(model(torch.randn((32, 176))).size())
     print(model(torch.randn((32, 236))).size())
-
-

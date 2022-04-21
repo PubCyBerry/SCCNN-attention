@@ -36,6 +36,7 @@ network:
   decoder: ${Decoder}
   is_encoder_shared: True
   encoderType: SCCNN_bn
+  Simple_QHN: ${Simple_QHN}
 
 optimizer:
   optimizer: Adam
