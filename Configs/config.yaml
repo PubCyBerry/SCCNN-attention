@@ -37,6 +37,7 @@ network:
   is_encoder_shared: True
   encoderType: SCCNN_bn
   Simple_QHN: ${Simple_QHN}
+  hybrid: ${quantum_circuit}
 
 optimizer:
   optimizer: Adam

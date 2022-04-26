@@ -1,9 +1,12 @@
 from typing import Any, Optional, List
 from collections import OrderedDict
+import numpy as np 
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from .quantum_layers import Hybrid
 
 
 def conv_block(
@@ -189,11 +192,44 @@ class Hybrid_Decoder(nn.Module):
         hidden_dim: int = 512,
         output_dim: int = 2,
         dropout_p: float = 0,
+        n_qubits=2,
+        backend="aer_simulator",
+        shots=100,
+        shift=0.6,
+        is_cnot=False,
+        dense_type=0,
         *args: Any,
         **kwargs: Any,
     ) -> None:
         super().__init__()
 
+        self.type = int(dense_type)
+        self.fc1q = nn.Linear(input_dim, n_qubits)
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, n_qubits)
+        self.fc3 = nn.Linear(n_qubits * 2, output_dim)
+        
+        self.hybrid = Hybrid(n_qubits, backend, shots, shift, is_cnot)
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    def forward(self, x):
+        if self.type == 1:
+            # (batch, lstm_hidden * 2) -> (batch, n_qubits)
+            x = self.fc1q(x)
+            x = torch.tanh(x) * torch.ones_like(x) * torch.tensor(np.pi / 2)
+            x = self.hybrid(x).to(self.device)
+            x = torch.cat((x, 1 - x), -1)
+            x = F.softmax(self.fc3(x), dim=1)
+        
+        else:
+            x = F.leaky_relu(self.fc1(x))
+            x = self.fc2(x)
+            x = torch.tanh(x) * torch.ones_like(x) * torch.tensor(np.pi / 2)
+            x = self.hybrid(x).to(self.device)
+            x = torch.cat((x, 1 - x), -1)
+            x = F.softmax(self.fc3(x), dim=1)
+
+        return x
 
 if __name__ == "__main__":
     import torch

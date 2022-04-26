@@ -8,8 +8,8 @@ dir_path=$(dirname "${BASH_SOURCE[0]}")
 # ex)
 # bash main.sh src/data/loader.py == python "${dir_path}/src/data/loader.py"
 
-project_name="${1:-SCCNN_LSTM_roi_rank}"
-model_name="${2:-SCCNN_LSTM_roi_rank}"
+project_name="${1:-SCCNN_LSTM_Hybrid}"
+model_name="${2:-SCCNN_LSTM_Hybrid}"
 gpu="${3:-0}"
 for i in $(seq 1 20); do
     python run.py \
