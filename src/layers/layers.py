@@ -217,18 +217,15 @@ class Hybrid_Decoder(nn.Module):
             # (batch, lstm_hidden * 2) -> (batch, n_qubits)
             x = self.fc1q(x)
             x = torch.tanh(x) * torch.ones_like(x) * torch.tensor(np.pi / 2)
-            x = self.hybrid(x).to(self.device)
-            x = torch.cat((x, 1 - x), -1)
-            x = F.softmax(self.fc3(x), dim=1)
         
         else:
             x = F.leaky_relu(self.fc1(x))
             x = self.fc2(x)
             x = torch.tanh(x) * torch.ones_like(x) * torch.tensor(np.pi / 2)
-            x = self.hybrid(x).to(self.device)
-            x = torch.cat((x, 1 - x), -1)
-            x = F.softmax(self.fc3(x), dim=1)
 
+        x = self.hybrid(x).to(self.device)
+        x = torch.cat((x, 1 - x), -1)
+        x = F.softmax(self.fc3(x), dim=1)
         return x
 
 if __name__ == "__main__":

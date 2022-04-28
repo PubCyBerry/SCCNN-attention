@@ -22,6 +22,7 @@ class QuantumCircuit:
         self.theta = [qiskit.circuit.Parameter(f"theta_{i}") for i in all_qubits]
 
         self._circuit.h(all_qubits)
+        # self._circuit.h(0)
         self._circuit.barrier()
         if is_cnot:
             assert len(all_qubits) >= 2, "CNOT must be with >=2 qubits"
