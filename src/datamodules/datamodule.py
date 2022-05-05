@@ -85,8 +85,12 @@ class OneSiteHoldoutDataModule(LightningDataModule):
             **conf,
             collate_fn=collate_fn,
             batch_sampler=SamplerFactory().get(
+                # class_idxs=[
+                #     np.where(self.train_dataset.labels == i)[0].tolist()
+                #     for i in range(2)
+                # ],
                 class_idxs=[
-                    np.where(self.train_dataset.labels == i)[0].tolist()
+                    np.where(np.array([x[1] for x in self.train_dataset]) == i)[0].tolist()
                     for i in range(2)
                 ],
                 batch_size=batch_size,
