@@ -1,13 +1,11 @@
 from dataclasses import dataclass
 from typing import Optional, Dict, Any
-
-from src.tasks import ClassificationTask
-from src.data import ROIDataset
-
 from torch.utils.data import Dataset
 
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning import LightningModule, LightningDataModule, Trainer
+
+from src.tasks import ClassificationTask
 
 
 @dataclass
@@ -45,7 +43,7 @@ class Base_Runner:
         return callbacks if len(callbacks) > 0 else None
 
     def run(self, profiler: Optional[str] = False):
-        dm = self.get_datamodule(self, ROIDataset)
+        dm = self.get_datamodule()
         model = self.get_network()
 
         trainer = Trainer(

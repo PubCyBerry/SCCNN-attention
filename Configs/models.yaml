@@ -98,4 +98,4 @@ quantum_circuit:
   shift: 0.6
   shots: 100
   is_cnot: True
-  dense_type: 1
+  dense_type: 2

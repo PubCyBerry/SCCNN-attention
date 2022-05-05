@@ -3,7 +3,7 @@ import numpy as np
 from typing import Any, Optional, List, Dict
 from dataclasses import dataclass, field
 from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader, Subset, random_split
 from pytorch_lightning import LightningDataModule
 from src.data import collate_fn, SamplerFactory
 
@@ -38,7 +38,7 @@ class LOSODataModule(LightningDataModule):
                     for i in range(2)
                 ],
                 batch_size=batch_size,
-                n_batches=len(self.train_dataset)//batch_size + 5,
+                n_batches=len(self.train_dataset) // batch_size + 5,
                 alpha=1.0,
                 kind="fixed",
             ),
@@ -46,6 +46,58 @@ class LOSODataModule(LightningDataModule):
 
     def val_dataloader(self):
         return DataLoader(self.val_dataset, **self.loader.eval, collate_fn=collate_fn)
+
+    def test_dataloader(self):
+        return DataLoader(self.test_dataset, **self.loader.eval, collate_fn=collate_fn)
+
+
+@dataclass
+class OneSiteHoldoutDataModule(LightningDataModule):
+    data: Dict
+    loader: Dict
+    dataset: Dict
+
+    def setup(self, stage: Optional[str] = None) -> None:
+        """
+        load class는 site(str)을 인자로 받아 해당 사이트의 데이터를 가져옴
+        LOSODataModule은 훈련 데이터와 평가 데이터가 중복되지 않으므로 이것으로 충분함
+        OneSiteHoldOut의 경우 훈련 데이터와 평가 데이터가 중복되므로 같은 방식으로 구현할 경우 데이터가 중복됨
+        따라서 Setup()에서 전체를 부른 다음 나누는 방식으로 구해야 할 것임
+        또한, OneSiteHoldOut을 총 5회 수행해야 하므로 바꿔가면서 5번 돌려야 함
+        datamodule, runner가 둘 다 필요한 상황
+        하지만 Holdout을 OneSite가 아닌 전체 사이트에 대해서도 할 수 있기 때문에 이 부분은 수정이 필요함
+        """
+        split_rate = 0.8
+        dataset = self.dataset(self.data.test_site)
+        n_train = int(len(dataset) * split_rate)
+        self.train_dataset, self.test_dataset = random_split(
+            dataset, [n_train, len(dataset) - n_train]
+        )
+
+    def train_dataloader(self):
+        conf = deepcopy(self.loader.train)
+        batch_size = conf.pop("batch_size")
+        conf.shuffle = False
+        # return DataLoader(self.train_dataset, **conf, collate_fn=collate_fn)
+
+        return DataLoader(
+            self.train_dataset,
+            **conf,
+            collate_fn=collate_fn,
+            batch_sampler=SamplerFactory().get(
+                class_idxs=[
+                    np.where(self.train_dataset.labels == i)[0].tolist()
+                    for i in range(2)
+                ],
+                batch_size=batch_size,
+                n_batches=len(self.train_dataset) // batch_size + 5,
+                alpha=1.0,
+                kind="fixed",
+            ),
+        )
+
+    def val_dataloader(self):
+        return DataLoader(self.test_dataset, **self.loader.eval, collate_fn=collate_fn)
 
     def test_dataloader(self):
         return DataLoader(self.test_dataset, **self.loader.eval, collate_fn=collate_fn)

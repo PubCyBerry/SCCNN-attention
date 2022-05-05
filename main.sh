@@ -19,3 +19,4 @@ for i in $(seq 1 20); do
         log.device.gpu="$gpu" \
         data.roi=$i
 done
+
