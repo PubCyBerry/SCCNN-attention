@@ -57,7 +57,7 @@ class OneSiteHoldoutDataModule(LightningDataModule):
     loader: Dict
     dataset: Dict
 
-    def setup(self, stage: Optional[str] = None) -> None:
+    def setup(self, stage: Optional[str] = None):
         """
         load class는 site(str)을 인자로 받아 해당 사이트의 데이터를 가져옴
         LOSODataModule은 훈련 데이터와 평가 데이터가 중복되지 않으므로 이것으로 충분함
@@ -67,12 +67,16 @@ class OneSiteHoldoutDataModule(LightningDataModule):
         datamodule, runner가 둘 다 필요한 상황
         하지만 Holdout을 OneSite가 아닌 전체 사이트에 대해서도 할 수 있기 때문에 이 부분은 수정이 필요함
         """
-        split_rate = 0.8
-        dataset = self.dataset(self.data.test_site)
-        n_train = int(len(dataset) * split_rate)
-        self.train_dataset, self.test_dataset = random_split(
-            dataset, [n_train, len(dataset) - n_train]
-        )
+        if stage in ('fit', None):
+            split_rate = 0.8
+            dataset = self.dataset(self.data.test_site)
+                
+            n_train = int(len(dataset) * split_rate)
+            self.train_dataset, self.val_dataset = random_split(
+                dataset, [n_train, len(dataset) - n_train]
+            )
+        if stage in ('test', None):
+            self.test_dataset = self.val_dataset
 
     def train_dataloader(self):
         conf = deepcopy(self.loader.train)
@@ -101,7 +105,7 @@ class OneSiteHoldoutDataModule(LightningDataModule):
         )
 
     def val_dataloader(self):
-        return DataLoader(self.test_dataset, **self.loader.eval, collate_fn=collate_fn)
+        return DataLoader(self.val_dataset, **self.loader.eval, collate_fn=collate_fn)
 
     def test_dataloader(self):
         return DataLoader(self.test_dataset, **self.loader.eval, collate_fn=collate_fn)
