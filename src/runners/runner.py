@@ -80,12 +80,8 @@ class OneSiteHoldout_Runner(Base_Runner):
         if self.data.get("roi", None) is None:
             self.data.roi = list(range(116))
         else:
-            if "roi_rank" in self.log.project_name:
-                with open("Data/nitrc_niak/roi_rank.pkl", "rb") as f:
-                    self.data.roi = pickle.load(f)[: int(self.data.roi)]
-
-            else:
-                self.data.roi = list(range(int(self.data.roi)+1))
+            with open('roi_rank.pkl', 'rb') as f:
+                self.data.roi = pickle.load(f)[:int(self.data.roi)+1]
 
         self.network.roi_rank = self.data.roi
         print("ROI = {}".format(self.data.roi))
