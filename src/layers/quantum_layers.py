@@ -21,7 +21,7 @@ class QuantumCircuit:
         # --- multi qubit ---#
         self.theta = [qiskit.circuit.Parameter(f"theta_{i}") for i in all_qubits]
         self.possible_states = []
-        for s in range(2**int(all_qubits)):
+        for s in range(2**len(all_qubits)):
             self.possible_states.append(format(s, 'b').zfill(all_qubits))
         self.states = np.zeros(len(self.possible_states))
 
