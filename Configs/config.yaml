@@ -26,6 +26,7 @@ loader:
 
 data:
   path: Data/preprocessed/all
+  roi: 5
 
 network:
   model: ${log.model_name}
@@ -41,7 +42,7 @@ network:
 
 optimizer:
   optimizer: Adam
-  lr: 1e-4
+  lr: 1e-5
 
 
 runner: OneSiteHoldout_Runner

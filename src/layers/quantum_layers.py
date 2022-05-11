@@ -20,13 +20,17 @@ class QuantumCircuit:
         # self.theta = qiskit.circuit.Parameter("theta")
         # --- multi qubit ---#
         self.theta = [qiskit.circuit.Parameter(f"theta_{i}") for i in all_qubits]
+        self.possible_states = []
+        for s in range(2**all_qubits):
+            self.possible_states.append(format(s, 'b').zfill(all_qubits))
+        self.states = np.zeros(len(self.possible_states))
 
-        self._circuit.h(all_qubits)
-        # self._circuit.h(0)
+        # self._circuit.h(all_qubits)
+        self._circuit.h(0)
         self._circuit.barrier()
         if is_cnot:
             assert len(all_qubits) >= 2, "CNOT must be with >=2 qubits"
-            self._circuit.cx(0, 1)
+            # self._circuit.cx(0, 1)
         # self._circuit.ry(self.theta, all_qubits)
         # --- multi qubit ---#
         for theta, qubit in zip(self.theta, all_qubits):
@@ -34,6 +38,25 @@ class QuantumCircuit:
 
         self._circuit.measure_all()
         # ---------------------------
+
+        # self._circuit.barrier()
+        # self._circuit.h(1)
+        # self._circuit.cx(1,2)
+        
+        # self._circuit.h(0)
+        # self._circuit.cx(0,1)
+        # self._circuit.h(3)
+        # self._circuit.cx(2,3)
+        
+        # self._circuit.ry(self.theta[0],0)
+        # self._circuit.ry(self.theta[1],1)
+        # self._circuit.ry(self.theta[2],2)
+        # self._circuit.ry(self.theta[3],3)
+        
+        # self._circuit.cx(1,0)
+        # self._circuit.cx(1,3)
+        
+        # self._circuit.measure_all()
 
         self.backend = backend
         self.shots = shots
@@ -55,6 +78,15 @@ class QuantumCircuit:
         result = job.result().get_counts()
 
         counts = np.array(list(result.values()))
+        states = []
+        for i in self.possible_states:
+            try:
+                states.append(result[i])
+            except:
+                states.append(0)   
+        states = np.array(states, dtype=np.float64)
+        return states/self.shots
+    
         # states = np.array(list(result.keys())).astype(float)
         # --- multi qubit -- #
         states = np.array([list(state) for state in result.keys()]).astype(float)
@@ -82,7 +114,7 @@ class HybridFunction(Function):
         # result = torch.tensor([expectation_z])
         # -- multi qubit -- #
         expectation_z = [
-            torch.Tensor(ctx.quantum_circuit.run(input[i].tolist()))
+            torch.Tensor(ctx.quantum_circuit.run(input[i].tolist())).unsqueeze(0)
             for i in range(input.size(0))
         ]
         result = torch.concat(expectation_z, axis=0)
@@ -110,6 +142,17 @@ class HybridFunction(Function):
             )
             gradients.append(gradient)
         gradients = torch.concat(gradients, axis=0)
+        #
+        possible_states = []
+        for s in range(2**(len(input[0]))):
+            possible_states.append(np.array(list(format(s, "b").zfill(len(input[0]))),np.float64))
+        possible_states=np.array(possible_states)
+        
+        grad = gradients * grad_output
+        grad = torch.matmul(grad.type(torch.FloatTensor), torch.FloatTensor(possible_states))
+        
+        return grad.to(device), None, None
+
 
         return (gradients * grad_output.float()).to(device), None, None
 
@@ -118,7 +161,7 @@ class Hybrid(nn.Module):
     """Hybrid quantum - classical layer definition"""
 
     def __init__(
-        self, n_qubits=2, backend="aer_simulator", shots=100, shift=0.6, is_cnot=False
+        self, n_qubits=4, backend="aer_simulator", shots=100, shift=0.6, is_cnot=False
     ):
         super(Hybrid, self).__init__()
         self.quantum_circuit = QuantumCircuit(

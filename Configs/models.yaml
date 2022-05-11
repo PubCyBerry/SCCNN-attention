@@ -95,7 +95,7 @@ Simple_QHN:
 quantum_circuit:
   n_qubits: 3
   simulator: aer_simulator
-  shift: 0.6
+  shift: 0.5
   shots: 100
   is_cnot: True
   dense_type: 2

@@ -207,7 +207,7 @@ class Hybrid_Decoder(nn.Module):
         self.fc1q = nn.Linear(input_dim, n_qubits)
         self.fc1 = nn.Linear(input_dim, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, n_qubits)
-        self.fc3 = nn.Linear(n_qubits * 2, output_dim)
+        self.fc3 = nn.Linear(2**n_qubits, output_dim)
         
         self.hybrid = Hybrid(n_qubits, backend, shots, shift, is_cnot)
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -224,7 +224,7 @@ class Hybrid_Decoder(nn.Module):
             x = torch.tanh(x) * torch.ones_like(x) * torch.tensor(np.pi / 2)
 
         x = self.hybrid(x).to(self.device)
-        x = torch.cat((x, 1 - x), -1)
+        # x = torch.cat((x, 1 - x), -1)
         x = F.softmax(self.fc3(x), dim=1)
         return x
 

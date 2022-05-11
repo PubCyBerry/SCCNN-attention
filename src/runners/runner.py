@@ -85,7 +85,8 @@ class OneSiteHoldout_Runner(Base_Runner):
                     self.data.roi = pickle.load(f)[: int(self.data.roi)]
 
             else:
-                self.data.roi = [int(self.data.roi)]
+                self.data.roi = list(range(int(self.data.roi)+1))
+
         self.network.roi_rank = self.data.roi
         print("ROI = {}".format(self.data.roi))
 
