@@ -21,7 +21,6 @@ from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 
 from pytorch_lightning import seed_everything
 
-from utils.utils import record_train_test
 
 seed_everything(41)
 
