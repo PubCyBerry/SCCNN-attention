@@ -110,6 +110,9 @@ class OneSiteHoldoutDataModule(LightningDataModule):
     def test_dataloader(self):
         return DataLoader(self.test_dataset, **self.loader.eval, collate_fn=collate_fn)
 
+    def __post_init__(cls):
+        super().__init__()
+
 
 if __name__ == "__main__":
     from omegaconf import OmegaConf

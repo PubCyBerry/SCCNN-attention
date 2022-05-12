@@ -28,12 +28,12 @@ class Simple_QHN(nn.Module):
         self.fc2 = nn.Linear(params.linear_out, params.n_qubits)
         self.hybrid = Hybrid(
             params.n_qubits,
-            qiskit.Aer.get_backend("aer_simulator"),
+            'aer_simulator',
             100,
             shift=params.shift,
             is_cnot=params.is_cnot,
         )
-        self.fc3 = nn.Linear(params.n_qubits * 2, 2)
+        self.fc3 = nn.Linear(2**params.n_qubits, 2)
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     def forward(self, x):
@@ -51,7 +51,7 @@ class Simple_QHN(nn.Module):
         x = self.fc2(x)
         x = torch.tanh(x) * torch.ones_like(x) * torch.tensor(np.pi / 2)
         x = self.hybrid(x).to(self.device)
-        x = torch.cat((x, 1 - x), -1)
+        # x = torch.cat((x, 1 - x), -1)
         x = F.softmax(self.fc3(x), dim=1)
         return x
 
