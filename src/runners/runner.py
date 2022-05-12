@@ -9,7 +9,7 @@ from src.runners import Base_Runner
 from src.data import ROIDataset, SITES_DICT
 from src.datamodules import LOSODataModule, OneSiteHoldoutDataModule
 from src.tasks import ClassificationTask
-from src.utils import plot_paper
+from src.utils import plot_paper, record_train_test
 from src.callbacks import wandb_callback as wbc
 from src.callbacks import tensorboard_callback as tbc
 
@@ -20,6 +20,8 @@ from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 
 from pytorch_lightning import seed_everything
+
+from utils.utils import record_train_test
 
 seed_everything(41)
 
@@ -91,6 +93,10 @@ class OneSiteHoldout_Runner(Base_Runner):
         # # nyu, peking, ohsu, kki, ni
         # path[1:4] = path[2], path[3], path[1]
         # SITES = ["Peking", "KKI", "NI", "NYU", "OHSU"]
+
+        
+        # generate train_test column
+        record_train_test('Data/nitrc_niak/master_df.csv')
 
         final_results = list()
         for i in [5, 1, 6, 3, 4]:

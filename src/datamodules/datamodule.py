@@ -68,15 +68,11 @@ class OneSiteHoldoutDataModule(LightningDataModule):
         하지만 Holdout을 OneSite가 아닌 전체 사이트에 대해서도 할 수 있기 때문에 이 부분은 수정이 필요함
         """
         if stage in ('fit', None):
-            split_rate = 0.8
-            dataset = self.dataset(self.data.test_site)
-                
-            n_train = int(len(dataset) * split_rate)
-            self.train_dataset, self.val_dataset = random_split(
-                dataset, [n_train, len(dataset) - n_train]
-            )
+            self.train_dataset = self.dataset(self.data.test_data, 'train')
+            self.val_dataset = self.dataset(self.data.test_data, 'test')
+
         if stage in ('test', None):
-            self.test_dataset = self.val_dataset
+            self.test_dataset = self.dataset(self.data.test_data, 'test')
 
     def train_dataloader(self):
         conf = deepcopy(self.loader.train)

@@ -8,9 +8,9 @@ from src.data import Load, SITES_DICT
 
 
 class ROIDataset(Dataset):
-    def __init__( self, site: Union[List, str]) -> None:
+    def __init__( self, site: Union[List, str], task=None) -> None:
         load = Load()
-        self.data, self.labels = load.loadSiteData(site)
+        self.data, self.labels = load.loadSiteData(site, task)
 
     def __len__(self):
         return len(self.labels)

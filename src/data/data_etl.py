@@ -119,11 +119,13 @@ class Transform:
 class Load:
     df: pd.DataFrame = pd.read_csv(Path(DATA_DIR) / "master_df.csv")
 
-    def loadSiteData(self, site: Union[List[int], int] = SITE_INDEX):
+    def loadSiteData(self, site: Union[List[int], int] = SITE_INDEX, task=None):
         if isinstance(site, int):
             site = [site]
 
         df = self.df[self.df['Site'].isin(site)]
+        if task is not None:
+            df = df[df['task'] == task]
         data = [np.load(p) for p in df["filePath"].values]
         labels = df["DX"].values
 
