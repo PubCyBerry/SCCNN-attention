@@ -95,7 +95,7 @@ class OneSiteHoldout_Runner(Base_Runner):
 
         
         # generate train_test column
-        record_train_test('Data/nitrc_niak/master_df.csv')
+        record_train_test(df_path='Data/nitrc_niak/master_df.csv')
 
         final_results = list()
         for i in [5, 1, 6, 3, 4]:

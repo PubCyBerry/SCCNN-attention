@@ -28,7 +28,7 @@ def plot_paper(
     return plt
 
 
-def record_train_test(df_path: "Data/nitrc_niak/master_df.csv"):
+def record_train_test(df_path: str="Data/nitrc_niak/master_df.csv"):
     df = pd.read_csv(df_path)
     df["task"] = 0
     n_class = max(df.DX) + 1
@@ -41,7 +41,7 @@ def record_train_test(df_path: "Data/nitrc_niak/master_df.csv"):
             )
             df["task"][df.index.isin(train_index)] = "train"
             df["task"][df.index.isin(test_index)] = "test"
-    df.to_csv(df_path)
+    df.to_csv(df_path, index=False)
 
 
 if __name__ == "__main__":
